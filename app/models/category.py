@@ -15,7 +15,7 @@ class Category(Base):
     children = relationship("Category", back_populates="parent", cascade="all, delete-orphan")
 
     keywords = relationship("CategoryKeyword", back_populates="category", cascade="all, delete-orphan")
-    # transactions = relationship("Transaction", back_populates="category")
+    transactions = relationship("Transaction", back_populates="category")
 
     def __repr__(self):
         return f'Catogery {self.name} (id={self.id})'
