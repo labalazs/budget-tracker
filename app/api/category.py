@@ -9,13 +9,10 @@ from app.schemas.category import CategoryCreate, CategoryRead
 router = APIRouter()
 
 def build_category_tree(categories: List[Category]) -> List[Category]:
-    category_map = { cat.id: cat for cat in categories }
     roots = []
     for cat in categories:
-        if cat.parent_id:
-            parent = category_map.get(cat.parent_id)
-            if parent:
-                parent.children.append(cat)
+        if not cat.is_parent and cat.parent_id:
+            continue
         else:
             roots.append(cat)
     return roots
@@ -41,7 +38,7 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
         if data.parent_id is None:
             raise HTTPException(status_code=400, detail="Child category must have a parent_id")
         parent = db.query(Category).filter(Category.id == data.parent_id).first()
-        if not parent or parent.is_parent:
+        if not parent or not parent.is_parent:
             raise HTTPException(status_code=400, detail="parent_id must refer to a parent category")
     category = Category(name=data.name, is_parent=data.is_parent, parent_id=data.parent_id)
     db.add(category)
