@@ -1,11 +1,15 @@
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
 from datetime import datetime
+import logging
 
 from app.models.transaction import Transaction
 from app.models.category import Category
 
+logger = logging.getLogger(__name__)
+
 def get_stats(db: Session, date_from: datetime | None = None, date_to: datetime | None = None):
+    logger.info("Preparing statistics")
     query = (db.query(Category.name.label("category"), func.sum(Transaction.amount).label("total")).join(Category, Transaction.category_id == Category.id).group_by(Category.name))
     if date_from:
         query = query.filter(Transaction.created_at >= date_from)
@@ -32,4 +36,5 @@ def get_stats(db: Session, date_from: datetime | None = None, date_to: datetime 
         }
         for row in monthly_query.all()
     ]
+    logger.info("Statistics prepared")
     return by_parent, monthly

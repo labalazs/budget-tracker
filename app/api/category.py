@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 
 from app.database import get_db
 from app.models.category import Category
 from app.schemas.category import CategoryCreate, CategoryRead
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 def build_category_tree(categories: List[Category]) -> List[Category]:
     roots = []
@@ -27,18 +30,22 @@ def get_categories(db: Session = Depends(get_db)):
 def get_category(category_id: int, db: Session = Depends(get_db)):
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
+        logger.warning(f'Category (id={category_id}) not found')
         raise HTTPException(status_code=404, detail="Category not found")
     return category
 
 @router.post("/", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
 def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
     if data.is_parent and data.parent_id is not None:
+        logger.warning(f'Parent category cannot have parent_id')
         raise HTTPException(status_code=400, detail="Parent category cannot have parent_id")
     if not data.is_parent:
         if data.parent_id is None:
+            logger.warning(f'Child category must have a parent_id')
             raise HTTPException(status_code=400, detail="Child category must have a parent_id")
         parent = db.query(Category).filter(Category.id == data.parent_id).first()
         if not parent or not parent.is_parent:
+            logger.warning(f'parent_id must refer to a parent category')
             raise HTTPException(status_code=400, detail="parent_id must refer to a parent category")
     category = Category(name=data.name, is_parent=data.is_parent, parent_id=data.parent_id)
     db.add(category)
@@ -50,6 +57,7 @@ def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
 def update_category(category_id: int, data: CategoryCreate, db: Session = Depends(get_db)):
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
+        logger.warning(f'Category (id={category_id}) not found')
         raise HTTPException(status_code=404, detail="Category not found")
     category.name = data.name
     category.is_parent = data.is_parent
@@ -62,6 +70,7 @@ def update_category(category_id: int, data: CategoryCreate, db: Session = Depend
 def delete_category(category_id: int, db: Session = Depends(get_db)):
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
+        logger.warning(f'Category (id={category_id}) not found')
         raise HTTPException(status_code=404, detail="Category not found")
     db.delete(category)
     db.commit()
