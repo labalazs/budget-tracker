@@ -9,6 +9,7 @@ from app.models.transaction import Transaction
 from app.models.category import Category
 from app.schemas.transaction import TransactionCreate, TransactionRead
 from app.services.categorizer import suggest_category
+from app.services.learning import learn_from_override
 
 router = APIRouter()
 
@@ -55,6 +56,7 @@ def update_transaction(transaction_id: int, data: TransactionCreate, db: Session
     if not transaction:
         logger.warning(f'Transaction (id={transaction_id}) not found')
         raise HTTPException(status_code=404, detail="Transaction not found")
+    old_category_id = transaction.category_id
     if data.category_id:
         category = db.query(Category).filter(Category.id == data.category_id).first()
         if not category or category.is_parent:
@@ -63,8 +65,11 @@ def update_transaction(transaction_id: int, data: TransactionCreate, db: Session
         transaction.category_id = data.category_id
     transaction.description = data.description
     transaction.amount = data.amount
+    transaction.created_at = data.created_at
     db.commit()
     db.refresh(transaction)
+    if data.category_id and data.category_id != old_category_id:
+        learn_from_override(description=transaction.description, category_id=data.category_id, db=db)
     return transaction
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
