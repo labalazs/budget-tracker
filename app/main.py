@@ -2,12 +2,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api import category, keyword, transaction, autocategorize, stats
 from app.logging import setup_logging
+from app.scheduler import start_scheduler
 import logging
 
 setup_logging()
 
-app = FastAPI(title="Budget Tracker API")
+start_scheduler()
 
+app = FastAPI(title="Budget Tracker API")
 app.include_router(category.router, prefix="/categories", tags=["Categories"])
 app.include_router(keyword.router, prefix="/keywords", tags=["Keywords"])
 app.include_router(transaction.router, prefix="/transactions", tags=["Transactions"])
