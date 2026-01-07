@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-import datetime
+from datetime import datetime
 from components.sidebar import show_sidebar
 
 API_BASE = "http://127.0.0.1:8000"
@@ -11,8 +11,8 @@ def show_table_header():
     for column, field_name in zip(columns, columns_names):
         column.write(field_name)
 
-def show_table_body():
-    transactions = get_transactions()
+def show_table_body(target_category_id: int | None = None, date_from: datetime | None = None, date_to: datetime | None = None):
+    transactions = get_transactions(target_category_id=target_category_id, date_from=date_from, date_to=date_to)
     for transaction in transactions:
         show_table_row(transaction=transaction)
 
@@ -32,8 +32,19 @@ def show_table_row(transaction):
     if do_delete_action:
         handle_delete(transaction_id=transaction["id"])
 
-def get_transactions():
-    response = requests.get(f'{API_BASE}/transactions/')
+def get_transactions(target_category_id: int | None = None, date_from: datetime | None = None, date_to: datetime | None = None):
+    params = ""
+    if target_category_id:
+        params += f'{f"&category_id={target_category_id}" if params != "" else f"category_id={target_category_id}"}'
+    if date_from:
+        date_from_string = date_from.strftime("%Y-%m-%d")
+        params += f'{f"&date_from={date_from_string}" if params != "" else f"date_from={date_from_string}"}'
+    if date_to:
+        date_to_string = date_to.strftime("%Y-%m-%d")
+        params += f'{f"&date_to={date_to_string}" if params != "" else f"date_to={date_to_string}"}'
+    if params != "":
+        params = "?" + params
+    response = requests.get(f'{API_BASE}/transactions/{params}')
     if response.status_code == 200:
         data = response.json()
         return data
@@ -82,7 +93,7 @@ def create_edit_modal(transaction_id: int):
     if st.button("Suggest Category", type="secondary"):
         suggested_category_id = get_suggested_category(transaction_desc)
     transaction_amount = st.number_input("Amount", value=transaction["amount"])
-    transaction_date = st.date_input("Created At", value=transaction["created_at"])
+    transaction_date = st.datetime_input("Created At", value=transaction["created_at"])
     child_categories = get_child_categories()
     category_names = []
     category_ids = {}
@@ -114,7 +125,7 @@ def create_add_modal():
     if st.button("Suggest Category", type="secondary"):
         suggested_category_id = get_suggested_category(transaction_desc)
     transaction_amount = st.number_input("Amount", placeholder=100.00, step=1.00)
-    transaction_date = st.date_input("Created At", )
+    transaction_date = st.datetime_input("Created At", value=None)
     child_categories = get_child_categories()
     category_names = []
     category_ids = {}
@@ -144,9 +155,19 @@ st.set_page_config(page_title="Transactions", layout="centered")
 show_sidebar()
 
 st.title("Transactions")
+categories = get_child_categories()
+category_names = ["All"]
+category_ids = {}
+for category in categories:
+    category_names.append(category["name"])
+    category_ids[category["name"]] = category["id"]
+target_category_name = st.selectbox("Category", category_names, index=0)
+target_category_index = None if target_category_name == "All" else category_ids[target_category_name]
+date_from = st.date_input("Date From", value=None)
+date_to = st.date_input("Date To", value=None)
 st.subheader("List of Transactions")
 show_table_header()
-show_table_body()
+show_table_body(target_category_id=target_category_index, date_from=date_from, date_to=date_to)
 st.subheader("Actions")
 if st.button("Add new"):
     create_add_modal()
