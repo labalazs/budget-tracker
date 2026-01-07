@@ -86,6 +86,8 @@ def create_edit_modal(category_id: int):
         else:
             st.toast("Please fill in the required information!")
 
+st.set_page_config(page_title="Categories", layout="centered")
+
 show_sidebar()
 
 st.title("Categories")
