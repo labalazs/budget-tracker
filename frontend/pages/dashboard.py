@@ -4,7 +4,8 @@ import requests
 import pandas as pd
 from components.sidebar import show_sidebar
 
-API_BASE = "http://127.0.0.1:8000"
+# API_BASE = "http://127.0.0.1:8000"
+API_BASE = "https://be-budget-tracker.onrender.com"
 
 def get_stats(date_from: datetime | None = None, date_to: datetime | None = None):
     params = ""

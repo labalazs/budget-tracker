@@ -3,7 +3,8 @@ import requests
 from datetime import datetime
 from components.sidebar import show_sidebar
 
-API_BASE = "http://127.0.0.1:8000"
+# API_BASE = "http://127.0.0.1:8000"
+API_BASE = "https://be-budget-tracker.onrender.com"
 
 def show_table_header():
     columns = st.columns((1, 2, 1, 2, 2, 1, 1))
