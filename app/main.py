@@ -4,12 +4,17 @@ from app.api import category, keyword, transaction, autocategorize, stats
 from app.logging import setup_logging
 from app.scheduler import start_scheduler
 import logging
+from app.init_db import init_db
 
 setup_logging()
 
 start_scheduler()
 
 app = FastAPI(title="Budget Tracker API")
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
 
 @app.get("/")
 def health_check():
