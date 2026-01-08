@@ -10,6 +10,11 @@ setup_logging()
 start_scheduler()
 
 app = FastAPI(title="Budget Tracker API")
+
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
+
 app.include_router(category.router, prefix="/categories", tags=["Categories"])
 app.include_router(keyword.router, prefix="/keywords", tags=["Keywords"])
 app.include_router(transaction.router, prefix="/transactions", tags=["Transactions"])
